@@ -8,5 +8,5 @@ build_from:
 labels:
   org.opencontainers.image.title: "Home Assistant Add-on: DomBusGateway"
   org.opencontainers.image.description: "Bridge between one or more networks of DomBus modules and MQTT with AutoDiscovery"
-  org.opencontainers.image.source: "https://github.com/CreasolTech/DomBusGateway-addon"
+  org.opencontainers.image.source: "https://github.com/CreasolTech/homeassistant-addons"
   org.opencontainers.image.licenses: "GNU GPL3"
