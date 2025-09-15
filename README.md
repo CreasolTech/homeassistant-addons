@@ -1,4 +1,4 @@
-# DomBusGateway addon for Home Assistant Operating System HAOS
+# Creasol addons for Home Assistant Operating System HAOS
 
 This repository contains the following addons:
 
@@ -10,10 +10,11 @@ This repository contains the following addons:
 ![Supports armv7 Architecture][armv7-shield]
 ![Supports i386 Architecture][i386-shield]
 
-Addon that installs a gateway that **interfaces one or more DomBus networks of home automation modules with MQTT AutoDiscovery**
+Bridge to interface one or more DomBus networks of home automation modules with MQTT AutoDiscovery
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fdombusgateway-addon)
 
+![DomBusGateway, a DomBus 2 MQTT bridge](https://images.creasol.it/dombusgateway_block1.webp)
 
 
 
