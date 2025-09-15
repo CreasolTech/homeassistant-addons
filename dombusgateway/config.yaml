@@ -1,5 +1,5 @@
-name: "DomBusGateway"
-description: "DomBus to MQTT-AD bridge to use Creasol DomBus modules"
+name: "dombusgateway"
+description: "DomBus to MQTT-AD bridge to use Creasol DomBus modules with Home Assistant"
 slug: "dombusgateway"
 version: "0.0.8"
 init: false
@@ -12,7 +12,7 @@ arch:
 
 url: "https://github.com/CreasolTech/DomBusGateway-addon"
 
-#apparmor: false
+apparmor: false
 
 startup: services
 
