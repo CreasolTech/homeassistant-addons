@@ -3,6 +3,8 @@ FROM $BUILD_FROM
 
 WORKDIR /opt/DomBusGateway
 
+LABEL org.opencontainers.image.source="https://github.com/creasoltech/homeassistant-addons"
+
 # Install requirements for add-on
 COPY rootfs/opt/DomBusGateway/requirements.txt /
 RUN \

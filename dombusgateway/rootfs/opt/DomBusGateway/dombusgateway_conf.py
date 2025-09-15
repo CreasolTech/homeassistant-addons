@@ -74,6 +74,7 @@ telnet = {
     'address':      '0.0.0.0',        # interface to bind to. '127.0.0.1' => localhost, '192.168.x.y' => LAN, '0.0.0.0' => all interfaces
 }
 
-print("Importing local configuration...")
-from local.dombusgateway_conf_local import *
-print("Imported!")
+try:
+    from local.dombusgateway_conf_local import *
+except:
+    print("Local configuration file local/dombusgateway_conf_local.py does not exist: loading default configuration")
