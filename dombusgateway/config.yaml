@@ -1,7 +1,7 @@
 name: "DomBusGateway"
 description: "DomBus to MQTT-AD bridge: use Creasol DomBus inputs/outputs/sensors modules"
 slug: "dombusgateway"
-version: "0.0.11"
+version: "0.0.12"
 init: false
 arch:
   - aarch64
