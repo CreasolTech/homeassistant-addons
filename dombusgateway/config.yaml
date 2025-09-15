@@ -1,7 +1,7 @@
-name: "dombusgateway"
-description: "DomBus to MQTT-AD bridge to use Creasol DomBus modules with Home Assistant"
+name: "DomBusGateway"
+description: "DomBus modules to MQTT-AD bridge"
 slug: "dombusgateway"
-version: "0.0.8"
+version: "0.0.9"
 init: false
 arch:
   - aarch64
