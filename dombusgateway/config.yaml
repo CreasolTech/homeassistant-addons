@@ -10,7 +10,7 @@ arch:
   - armv7
   - i386
 
-url: "https://github.com/CreasolTech/DomBusGateway-addon"
+url: "https://github.com/creasoltech/dombusgateway-addon"
 
 apparmor: false
 
@@ -58,4 +58,4 @@ schema:
 #  - mqtt_username
 #  - mqtt_password    
 
-image: "ghcr.io/CreasolTech/{arch}-dombusgateway-addon"
+image: "ghcr.io/creasoltech/{arch}-dombusgateway-addon"
