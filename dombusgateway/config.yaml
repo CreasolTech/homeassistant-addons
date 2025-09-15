@@ -1,5 +1,5 @@
 name: "DomBusGateway"
-description: "DomBus to MQTT-AD bridge: use DomBus inputs/outputs/sensors modules"
+description: "DomBus to MQTT-AD bridge: use Creasol DomBus inputs/outputs/sensors modules"
 slug: "dombusgateway"
 version: "0.0.9"
 init: false
