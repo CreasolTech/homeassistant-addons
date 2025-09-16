@@ -14,7 +14,7 @@ This repository contains the following addons:
 
 Bridge to interface one or more networks of DomBus modules (inputs, outputs, relays, sensors modules) with MQTT AutoDiscovery
 
-![DomBusGateway add-on for Home Assistant Operating system (HAOS)](https://images.creasol.it/dombusgateway-addon.webp)
+![DomBusGateway add-on for Home Assistant Operating system (HAOS)](https://images.creasol.it/dombusgateway_addon.webp)
 
 ## Installation
 
@@ -24,8 +24,14 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 
 
 - Click on the **blue button ADD ADD-ON REPOSITORY...** below to add the DomBusGateway repository to your HomeAssistant.
+
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fhomeassistant-addons)
 
+- Click on **+ Add** to add the repository to HA, then select **DomBusGateway** addon > **Install** 
+
+- Configure the addon by clickin on **Configure** tab, then set a valid username and password for MQTT broker: you can use any HomeAssistant user for MQTT, and you can create a new HA user for this scope of course. 
+
+- Click on **Start** to start the add-on.
 
 
 
