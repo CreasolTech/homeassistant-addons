@@ -16,22 +16,19 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 
 ![DomBusGateway add-on for Home Assistant Operating system (HAOS)](https://images.creasol.it/dombusgateway_addon.webp)
 
-## Installation
+## DomBusGateway addon installation
 
-- Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integration** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on* in case that a MQTT broker is not installed.
+1. Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integration** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on* in case that a MQTT broker is not installed.
 
 [Install Mosquitto broker addon, if not already installed: **Settings** > **Add-ons** > **Add-on store** > **Mosquitto broker** > **Add** and then **Start**]: #
 
+1. <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fhomeassistant-addons" target="_blank"><img src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg" /> Open this link in a new tab and click on + to add this repository to your Home Assistant</a>
 
-- Click on the **blue button ADD ADD-ON REPOSITORY...** below to add the DomBusGateway repository to your HomeAssistant.
+1. The DomBusGateway addon should be added to the add-ons page: select **DomBusGateway** addon and click on **Install** 
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fhomeassistant-addons)
+1. Configure the addon by clickin on **Configure** tab, then set a valid username and password for MQTT broker: you can use any HomeAssistant user for MQTT, and you can also create a new Home Assistant user for this scope, if needed. 
 
-- Click on **+ Add** to add the repository to HA, then select **DomBusGateway** addon > **Install** 
-
-- Configure the addon by clickin on **Configure** tab, then set a valid username and password for MQTT broker: you can use any HomeAssistant user for MQTT, and you can create a new HA user for this scope of course. 
-
-- Click on **Start** to start the add-on.
+1. Click on **Start** to start the add-on.
 
 
 ## Updating DomBusGateway
