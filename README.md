@@ -20,7 +20,7 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 
 1. Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integration** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on* in case that a MQTT broker is not installed.
 
-1. <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fhomeassistant-addons" target="_new">Open this link in a new tab or window, and click on <b>+</b> to add this repository to your Home Assistant</a>
+1. <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FCreasolTech%2Fhomeassistant-addons" target="_blank">Open this link in a new tab or window (so you can check the following instructions), and click on <b>+</b> to add this repository to your Home Assistant</a>
 
 1. The DomBusGateway addon should be added to the add-ons page: select **DomBusGateway** addon and click on **Install** 
 
