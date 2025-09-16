@@ -18,7 +18,7 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 
 ## Installation
 
-- Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integrtion** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on*
+- Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integration** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on* in case that a MQTT broker is not installed.
 
 [Install Mosquitto broker addon, if not already installed: **Settings** > **Add-ons** > **Add-on store** > **Mosquitto broker** > **Add** and then **Start**]: #
 
@@ -32,6 +32,16 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 - Configure the addon by clickin on **Configure** tab, then set a valid username and password for MQTT broker: you can use any HomeAssistant user for MQTT, and you can create a new HA user for this scope of course. 
 
 - Click on **Start** to start the add-on.
+
+
+## Updating DomBusGateway
+
+On **Settings** > **Add-ons** click on the wheel arrow in the top-right corner to check for updates, then refresh the page and if a update is available, you can do it from here. 
+
+
+## Using DomBusGateway
+
+Information about DomBusGateway is available at https://github.com/CreasolTech/DomBusGateway
 
 
 
