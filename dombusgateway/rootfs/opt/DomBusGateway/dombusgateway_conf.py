@@ -24,13 +24,13 @@ datadir = 'data'    # directory where Devices configuration and other data will 
 #debugLevel = (DB.LOG_DEBUG | DB.LOG_DUMPDCMD | DB.LOG_MQTTRX | DB.LOG_MQTTTX | DB.LOG_DUMPTX | DB.LOG_DUMPRX | DB.LOG_TELNET)
 debugLevel = (DB.LOG_DEBUG | DB.LOG_DUMPRX | DB.LOG_DUMPTX | DB.LOG_DUMPDCMD | DB.LOG_TELNET)
 
-# logFile = "info.log"
-logFile = None      # print log to stdout    
+logFile = None
+# logFile = None      # print log to stdout    
 
 # Dombus buses (1 or more serial RS485 buses attached to DomBus modules
 buses = {
-    1: { 'serialPort': '/dev/ttyUSBdombus1', }, # first bus serving ground floor
-    2: { 'serialPort': '/dev/ttyUSBdombus2', }, # second bus serving 2nd floor
+    1: { 'serialPort': '/dev/ttyUSB0', }, # first bus serving ground floor
+#    2: { 'serialPort': '/dev/ttyUSBdombus2', }, # second bus serving 2nd floor
 }
 
 # If more than one serial port is used, it's better to identify the USB ports connected to the USB/RS485 adapters: check info below

@@ -4,7 +4,7 @@
 # Written by Creasol - www.creasol.it
 #
 
-VERSION = "0.1"
+VERSION = "0.2"
 
 from dombusgateway_conf import *
 
@@ -85,7 +85,7 @@ def devIDName2devID(devIDname: str) -> int:
 ######################################## DomBusDevice class ###############################################    
 class DomBusDevice():
     """Device class"""
-    def __init__(self, devID : int, portType: int, portOpt: int, portName: str, options: dict, haOptions: dict, dcmd: dict = {}, status: dict = {}):
+    def __init__(self, devID : int, portType: int, portOpt: int, portName: str, options: dict, haOptions: dict, dcmd: dict = {},  status: dict = {}, dcmdConf: str = ""):
         self.devID = int(devID) # devID=0xBBAAAAPPPP
         self.busID = devID >> 32
         self.frameAddr = self.devID >> 16     #0xBBAAAA for example 0x01ff38
@@ -98,6 +98,7 @@ class DomBusDevice():
         self.portOpt = portOpt
         self.portName = portName  # "P01 RL1"
         self.dcmd = dcmd
+        self.dcmdConf = dcmdConf
         self.ha = {}
 
         if options:
@@ -188,7 +189,9 @@ class DomBusDevice():
         for opt in self.options:
             if not ((opt == 'A' and float(self.options[opt]) == 1) or (opt == 'B' and float(self.options[opt]) == 0)): 
                 self.portConf += f',{opt}={self.options[opt]}'
-        log(DB.LOG_DEBUG, f"setPortconf(): self.portConf={self.portConf}")
+        if len(self.dcmdConf)>0:
+            self.portConf += ',' + self.dcmdConf    # Add DCMD description as written by the user                
+        log(DB.LOG_DEBUG, f"setPortConf(): self.portConf={self.portConf}")
 
     def setTopics(self, platform1, platform2):
         """ Set self.topic, self,topicConfig, self.topic2, self.topic2COnfig """
@@ -207,13 +210,15 @@ class DomBusDevice():
         status = dict(devIDname2 = self.devIDname2, value = self.value, valueHA = self.valueHA, counterValue = self.counterValue, counterTime = self.counterTime, energy = self.energy, topic2 = self.topic2, topic2Config = self.topic2Config)
         return { 
             'devID': self.devID, 'portType': self.portType, 'portOpt': self.portOpt, 'portName': self.portName, 'options': self.options, 
-            'ha': self.ha, 'dcmd': self.dcmd, 'status': status
+            'ha': self.ha, 'dcmd': self.dcmd, 'status': status, 'dcmdConf': self.dcmdConf
         }
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'DomBusDevice':
         """Transform json data in the file to a dictionary of DomBusDevice devices"""
-        return cls(data['devID'], data['portType'], data['portOpt'], data['portName'], data['options'], data['ha'], data['dcmd'], data['status'])
+        if 'dcmdConf' not in data:
+            data['dcmdConf'] = ''  
+        return cls(data['devID'], data['portType'], data['portOpt'], data['portName'], data['options'], data['ha'], data['dcmd'], data['status'], data['dcmdConf'])
 
 
     def value2valueHA(self):
@@ -256,7 +261,6 @@ class DomBusDevice():
         else:
             if 'device_class' in self.ha and self.ha['device_class'] in ('door','window'):
                 self.valueHA = 'OFF' if self.value == 0 or self.value == 2 else 'ON'
-                log(DB.LOG_DEBUG, f'binary sensor type door: value={self.value}, valueHA={self.valueHA}')
             else:
                 self.valueHA = 'Off' if self.value == 0 else 'On'
             
@@ -529,16 +533,16 @@ class DomBusDevice():
         buses[self.busID]['protocol'].send()    # Transmit, if needed
 
 
-    def updateDeviceConfig(self, portType: int, portOpt: int, cal: int, dcmd: dict, options: dict, haOptions: dict, value: int = None):
+    def updateDeviceConfig(self, portType: int, portOpt: int, cal: int, dcmd: dict, dcmdConf: str, options: dict, haOptions: dict, value: int = None):
         """Port configuration change requested by the user (via telnet, for example) or by a new device read from DomBus network"""
-        
-        diff = 0
+
         self.lastTopicConfig = self.topicConfig     # save previous config topic, used to remove the old entity
         self.lastTopic2Config = None
         if self.topic2Config is not None:
             self.lastTopic2Config = self.topic2Config
         proto = buses[self.busID]['protocol']
 
+        diff = 0
         if portType is not None and self.portType != portType:
             self.portType = portType
             diff += 1
@@ -547,7 +551,9 @@ class DomBusDevice():
             diff += 2
         if dcmd is not None and self.dcmd != dcmd:
             self.dcmd = dcmd.copy()
+            self.dcmdConf = dcmdConf    # "DCMD(Pulse)=1ff37.1:Toggle,DCMD(Pulse1)=10001.2:On:1m"
             diff += 4
+            log(DB.LOG_DEBUG, f"2: len(dcmd)={len(dcmd)} dcmdConf={dcmdConf} self.dcmdConf={self.dcmdConf} diff={diff}")
         
         if options:
             self.options = options.copy()
@@ -560,15 +566,37 @@ class DomBusDevice():
             self.ha.update(haOptions)
             diff += 16
 
+        log(DB.LOG_DEBUG, f"3: len(dcmd)={len(dcmd)} dcmdConf={dcmdConf} self.dcmdConf={self.dcmdConf} diff={diff}")
         if diff & 7:
             # update DomBus module configuration
             log(DB.LOG_INFO, f'Update configuration for DomBus module {self.devIDname}:\r\n  {self.portConf}')
-            proto.txQueueAdd(self.frameAddr, DB.CMD_CONFIG, 7, 0, self.port, [((self.portType>>24)&0xff), ((self.portType>>16)&0xff), ((self.portType>>8)&0xff), (self.portType&0xff), (self.portOpt >> 8), (self.portOpt&0xff)], DB.TX_RETRY,0)
+            proto.txQueueAdd(self.frameAddr, DB.CMD_CONFIG, 7, 0, self.port, [((self.portType>>24)&0xff), ((self.portType>>16)&0xff), ((self.portType>>8)&0xff), (self.portType&0xff), (self.portOpt >> 8), (self.portOpt&0xff)], DB.TX_RETRY,1)
             proto.send()    # Transmit
-            # TODO: send dcmd !
+            # DCMD ?
+            if diff & 4:
+                # DCMD was changed => send
+                dcmdnum=0
+                for i in range(0, min(len(dcmd), 8)):
+                    d = dcmd[i]
+                    log(DB.LOG_DEBUG, f"DCMD: transmit #{i} ?")
+                    #note: port|=0, 0x20, 0x40, 0x60 (4 DCMD for each port)
+                    if (d[0]!=0 and d[0]<DB.DCMD_IN_EVENTS["MAX"]):
+                        dcmdnum += 1
+                        log(DB.LOG_DEBUG, f"Yes, txQueueAdd()")
+                        proto.txQueueAdd(self.frameAddr, DB.CMD_CONFIG, 7, 0, self.port, [((self.portType>>24)&0xff), ((self.portType>>16)&0xff), ((self.portType>>8)&0xff), (self.portType&0xff), (self.portOpt >> 8), (self.portOpt&0xff)], DB.TX_RETRY,1)
+                        proto.txQueueAdd(self.frameAddr, DB.CMD_DCMD_CONFIG, 12, 0, self.port|(i<<5), [ 
+                            d[0],
+                            d[1]>>8, d[1]&0xff,
+                            d[2]>>8, d[2]&0xff,
+                            d[3]>>8, d[3]&0xff, d[4], d[5],
+                            d[6]>>8, d[6]&0xff 
+                        ], DB.TX_RETRY, 1)
+                if (dcmdnum == 0): #DCMD not defined => transmits an empty DCMD_CONFIG 
+                    proto.txQueueAdd(self.frameAddr, DB.CMD_DCMD_CONFIG, 2, 0, self.port, [ DB.DCMD_IN_EVENTS["NONE"] ], DB.TX_RETRY, 1)
+                proto.send()    # Transmit!
 
         if 'ADDR' in options and options['ADDR']>0 and options['ADDR']<248:
-            Log(DB.LOG_INFO, f"Send command to change modbus device address to {options['ADDR']}")
+            log(DB.LOG_INFO, f"Send command to change modbus device address to {options['ADDR']}")
             # proto.txQueueAdd(self.frameAddr, DB.CMD_CONFIG, 4, 0, self.port, [DB.SUBCMD_SET, (newModbusAddr>>8), (newModbusAddr&0xff)], DB.TX_RETRY, 1)    #EVSE: until 2023-04-24 port must be replaced with port+5 to permit changing modbus address 
             proto.txQueueAddConfig16(self.frameAddr, self.port, DB.SUBCMD_SET, options['ADDR'])    #EVSE: until 2023-04-24 port must be replaced with port+5 to permit changing modbus address 
             proto.send()    # Transmit
@@ -674,7 +702,7 @@ class DomBusDevice():
             except Exception as e:
                 log(DB.LOG_ERR, f"Invalid address for HWADDR parameter: {options['HWADDR']} must be in hex format, from 1 to ffff")
             else:
-                if (newHwAddr > 0 and newHwAddr < 0xffff):
+                if (newHwAddr > 0 and newHwAddr < 0xffff and newHwAddr != self.devAddr):
                     log(DB.LOG_INFO, f"Change module address from {self.devAddr:04x} to {newHwAddr:04x}")
                     proto.txQueueAdd(self.frameAddr, DB.CMD_CONFIG, 4, 0, 0, [(newHwAddr >> 8), (newHwAddr&0xff), (0-(newHwAddr >> 8)-(newHwAddr&0xff)-0xa5)], DB.TX_RETRY,1)
                     proto.send()    # Transmit
@@ -700,6 +728,7 @@ class DomBusDevice():
                                 del Devices[dev]
                     if self.frameAddr in Modules:
                         del Modules[self.frameAddr]
+            del options['HWADDR']
 
         if 'A' not in self.options:
             self.options['A'] = 1
@@ -737,6 +766,7 @@ class DomBusProtocol(asyncio.Protocol):
         self.txbuffer = b""
         self.txQueue = dict()
         self.checksumValue = 0
+        self.retryTime = 0 # time since epoch, in ms, when a frame have to be TXed again
 
     def connection_made(self, transport):
         """Called when the connection is made."""
@@ -939,7 +969,7 @@ class DomBusProtocol(asyncio.Protocol):
                                                     if cmdLen >= 12:
                                                         arg11 = frame[portIdx+11]
                 self.setID(port)    # set self.devID and self.devIDname
-                self.moduleUpdate() # update modules dictionary to keep trace of running modules
+                self.moduleUpdate(1) # update modules dictionary to keep trace of running modules
                 # check if device exists
                 if cmdAck == 0 and self.devID not in Devices:
                     # send frame to ask configuration
@@ -1221,34 +1251,46 @@ class DomBusProtocol(asyncio.Protocol):
 
                 frameIdx = frameIdx + cmdLen + 1
                 
-    def moduleUpdate(self):
-        """Update Modules[self.devID], used to store which Modules have been RXed"""
+    def moduleUpdate(self, what: int = 0):
+        """
+            Update Modules[self.devID], used to store which Modules have been RXed
+            moduleUpdate(1) when a packet is RXed
+            moduleUpdate(2) when a packet is being TXed
+        """
+
         if self.frameAddr not in Modules:
-            Modules[self.frameAddr] = [ int(time.time()), int(time.time()*1000), int(time.time())+3-DB.PERIODIC_STATUS_INTERVAL, 0, 'N.A.', 'N.A.']
-        else:
+            Modules[self.frameAddr] = [0, 0, int(time.time())+3-DB.PERIODIC_STATUS_INTERVAL, 0, 'N.A.', 'N.A.']
+            
+        if what & 1: # RX packet
             Modules[self.frameAddr][DB.LASTRX] = time.time()
+
+        if what & 2:  # TX packet
+            Modules[self.frameAddr][DB.LASTTX] = int(time.time()*1000)
 
     def txQueueAddConfig16(self, frameAddr, port, subcmd, value):
         """Send a CMD_CONFIG with a SUBCMD and 16bit value"""
         log(DB.LOG_DEBUG,f"Calling txQueueAdd({self.frameAddr:06x}, {DB.CMD_CONFIG}, 4, 0, {port}, [{subcmd}, {((value>>8)&0xff)}, {(value&0xff)}], DB.TX_RETRY, 1)")
         self.txQueueAdd(frameAddr, DB.CMD_CONFIG, 4, 0, port, [subcmd, ((value>>8)&0xff), (value&0xff)], DB.TX_RETRY, 1)
 
-    def txQueueAdd(self, frameAddr, cmd,cmdLen,cmdAck,port,args,retries,now):
+    def txQueueAdd(self, frameAddr, cmd, cmdLen, cmdAck, port, args, retries, now):
         #add a command in the tx queue for the specified module (frameAddr)
         #if that command already exists, update it
         #cmdLen=length of data after command (port+args[])
         sec=int(time.time())
         ms=int(time.time()*1000)
+        self.moduleUpdate(2) # Update Modules[frameAddr]
         if len(self.txQueue)==0 or frameAddr not in self.txQueue:
             #create self.txQueue[frameAddr]
             self.txQueue[frameAddr]=[[cmd, cmdLen, cmdAck, port, args, retries]]
-            #Log(LOG_DEBUG,"self.txQueueAdd (frameAddr does not exist) frameAddr="+hex(frameAddr)+" cmd="+hex(cmd|cmdAck|cmdLen)+" port="+hex(port))
+            log(DB.LOG_DEBUG, f"txQueueAdd(): frameAddr does not exist! frameAddr={frameAddr:06x} cmd={(cmd|cmdAck|cmdLen):02x} port={hex(port)}")
+            Modules[frameAddr][DB.LASTRETRY] = 0 # Init retry value for this module (no frames were in the queue)
         else:
             found=0
             for f in self.txQueue[frameAddr]:
                 #f=[cmd,cmdlen,cmdAck,port,args[]]
                 if (f[DB.TXQ_CMD]==cmd and f[DB.TXQ_CMDLEN]==cmdLen and f[DB.TXQ_PORT]==port and (cmd!=DB.CMD_CONFIG or len(args)==0 or args[0]==f[DB.TXQ_ARGS][0])): #if CMD_CONFIG, also check that SUBCMD is the same
                     #command already in txQueue: update values
+                    log(DB.LOG_DEBUG, f"txQueueAdd(): frame already exist: frameAddr={frameAddr:06x} cmd={(cmd|cmdAck|cmdLen):02x} port={hex(port)}")
                     f[DB.TXQ_CMDACK]=cmdAck
                     f[DB.TXQ_ARGS]=args
                     if (f[DB.TXQ_RETRIES]<retries):
@@ -1257,9 +1299,10 @@ class DomBusProtocol(asyncio.Protocol):
                     break
             if (found==0):
                 self.txQueue[frameAddr].append([cmd,cmdLen,cmdAck,port,args,retries])
-                #Log(LOG_DEBUG,"txQueueAdd (frame with same cmd,cmdLen... does not exist) frameAddr="+hex(frameAddr)+" cmd="+hex(cmd|cmdAck|cmdLen)+" port="+hex(port))
+                # log(DB.LOG_DEBUG, f"txQueueAdd(): add frame to the queue: frameAddr={frameAddr:06x} cmd={(cmd|cmdAck|cmdLen):02x} port={hex(port)}")
             #txQueueRetry: don't modify it... transmit when retry time expires (maybe now or soon)
-        self.moduleUpdate() # Update Modules[frameAddr]
+        if now:
+            Modules[frameAddr][DB.LASTTX] = 0 # Transmit now
 
     def txQueueAskConfig(self, frameAddr):
         self.txQueueAdd(frameAddr, DB.CMD_CONFIG, 1, 0, 0xff, [], DB.TX_RETRY, 1)    #port=0xff to ask full configuration 
@@ -1296,21 +1339,24 @@ class DomBusProtocol(asyncio.Protocol):
     def send(self):
         """Read txQueue[] and create frames, one for each address, and start transmitting"""
         # txQueue[frameAddr]=[[cmd, cmdLen, cmdAck, port, [arg1, arg2, arg3, ...], retries]]
+        timeNextTx = 0  # next transmission time (since Epoch), in ms            
         tx = 0
         sec = int(time.time())
         ms = int(time.time() * 1000)
         # scan all Modules
         delModules = []
         for frameAddr, module in Modules.items():
-            timeFromLastTx = ms-module[DB.LASTTX]        #number of milliseconds since last TXed frame
-            timeFromLastRx = sec-module[DB.LASTRX]       #number of seconds since last RXed frame
-            timeFromLastStatus = sec-module[DB.LASTSTATUS]     #number of seconds since last TXed output status
-            if frameAddr in self.txQueue and len(self.txQueue[frameAddr]) > 0:
-                retry = module[DB.LASTRETRY]                         #number of retris (0,1,2,3...): used to compute the retry period
-                if retry > DB.TX_RETRY:
-                    retry = DB.TX_RETRY
-                if timeFromLastTx > (DB.TX_RETRY_TIME << (retry+1)):
+            if frameAddr in self.txQueue and len(self.txQueue[frameAddr])>0:
+                # timeSinceLastTx = ms-module[DB.LASTTX]        #number of milliseconds since last TXed frame
+                # timeLastTx = module[DB.LASTTX]
+                module[DB.LASTRETRY]                         #number of retry (0,1,2,3...): used to compute the retry period
+                if module[DB.LASTRETRY] > DB.TX_RETRY:
+                    module[DB.LASTRETRY] = DB.TX_RETRY
+                timeNextRetry = module[DB.LASTTX] + (DB.TX_RETRY_TIME << (module[DB.LASTRETRY]+1)) # time for the next transmission, for this module
+                if timeNextRetry <= ms:
+                    # Must transmit now
                     tx=1
+                    log(DB.LOG_DEBUG, f"send(): TX frame for {self.frameAddr:06x}")
                     self.txbuffer = bytearray()
                     self.txbuffer.append(DB.PREAMBLE)
                     self.txbuffer.append((frameAddr >> 8) & 0xff)       #dstAddr
@@ -1324,10 +1370,14 @@ class DomBusProtocol(asyncio.Protocol):
                     # Transmit ACK first, then commands
                     for txq in self.txQueue[frameAddr][:]:    #iterate a copy of self.txQueue[frameAddr]
                         (cmd, cmdLen, cmdAck, port, args, retry) = txq
-                        if cmdAck: txQueueNow.append(txq)
+                        if cmdAck:
+                            # ACK transmitted first
+                            txQueueNow.append(txq)
                     for txq in self.txQueue[frameAddr][:]:    #iterate a copy of txQueue[frameAddr]
                         (cmd, cmdLen, cmdAck, port, args, retry) = txq
-                        if cmdAck==0: txQueueNow.append(txq)
+                        if cmdAck==0: 
+                            # Command to be transmitted
+                            txQueueNow.append(txq)
 
                     for txq in txQueueNow:    #iterate txQueueNow
                         #[cmd,cmdLen,cmdAck,port,[*args]]
@@ -1351,6 +1401,11 @@ class DomBusProtocol(asyncio.Protocol):
                             self.txQueue[frameAddr].remove(txq)
                         else:
                             txq[DB.TXQ_RETRIES] = retry-1   #command, no ack: decrement retry
+                            # set time for the next retransmission
+                            if timeNextTx == 0 or timeNextTx < (ms + DB.TX_RETRY_TIME << (module[DB.LASTRETRY]+1)):
+                                timeNextTx = ms + (DB.TX_RETRY_TIME << (module[DB.LASTRETRY]+1))
+                                print(f"send(): frameAddr={frameAddr:06x} retry={module[DB.LASTRETRY]} waitTime={DB.TX_RETRY_TIME << (module[DB.LASTRETRY]+1)} queue={self.txQueue[frameAddr]}")
+
                     self.txbuffer[DB.FRAME_LEN] = txbufferIndex - DB.FRAME_HEADER
                     module[DB.LASTRETRY] += 1    #increment RETRY to multiply the retry period * 2
                     if (module[DB.LASTRETRY] >= DB.TX_RETRY):
@@ -1363,10 +1418,17 @@ class DomBusProtocol(asyncio.Protocol):
                     self.transport.write(self.txbuffer[:txbufferIndex])
                     self.dump(self.txbuffer, txbufferIndex, "TX", frameAddr >> 16, DB.FRAME_OK)
                     Modules[frameAddr][DB.LASTTX] = ms
+                else:
+                    # if timeNextRetry > ms: must wait!
+                    log(DB.LOG_DEBUG, f"send(): {frameAddr:06x} Frame will be transmitted later")
+                    if timeNextTx==0 or timeNextRetry < timeNextTx:
+                        timeNextTx = timeNextRetry
 
             else: #No frame to be TXed for this frameAddr
                 #check that module is active
-                if timeFromLastRx > DB.MODULE_ALIVE_TIME:
+                print(f"send(): frameAddr={frameAddr:06x} and queue is empty for this frameAddr")
+                timeSinceLastRx = sec-module[DB.LASTRX]       #number of seconds since last RXed frame
+                if timeSinceLastRx > DB.MODULE_ALIVE_TIME:
                     # too long time since last RX from this module: remove it from Modules
                     if frameAddr: 
                         log(DB.LOG_INFO,f"Remove module {frameAddr:06x} because it's not alive")
@@ -1389,6 +1451,7 @@ class DomBusProtocol(asyncio.Protocol):
             if d in Modules:
                 del Modules[d]
 
+
         if (tx==0): #nothing has been transmitted: send outputs status for device with older lastStatus
             olderFrameAddr=0
             olderTime=sec
@@ -1404,7 +1467,23 @@ class DomBusProtocol(asyncio.Protocol):
                 #Log(LOG_DEBUG,"send(): Transmit outputs Status for "+hex(olderFrameAddr))
                 self.txOutputsStatus(olderFrameAddr)
 
+        if timeNextTx != 0 and timeNextTx > ms:
+            # another frame must be transmitted at this time (in ms): timeNextTx
+            if self.retryTime == 0 or self.retryTime < ms:
+                # create a task that wait for the retry time and then execute send() again
+                self.retryTime = timeNextTx
+                print(f"timeNextTx={timeNextTx}, waitTime={timeNextTx - ms}")
+                asyncio.create_task(self._retrySend(timeNextTx - ms))
+                    
 
+    async def _retrySend(self, waitTime):
+        """Wait for waitTime (in milliseconds), then execute send() again"""
+        if waitTime>0:
+            waitTime /= 1000    # Convert in seconds
+            print(f"_retrySend(): waiting for {waitTime}s...")
+            await asyncio.sleep(waitTime)
+            self.retryTime = 0
+            self.send()
 
 class DomBusManager:
     def __init__(self):
@@ -1769,6 +1848,8 @@ class DomBusManager:
                 portName = None
                 options = {}
                 ha = {}
+                dcmd = []
+                dcmdConf = ''
                 
                 # check telnet keywords:
                 for c in args[1].split(','):
@@ -1779,6 +1860,10 @@ class DomBusManager:
                         val = None
                     cmdu = cmd.upper()
                     log(DB.LOG_DEBUG,f"cmd={cmd} val={val}")
+                    # c='DCMD(Pulse)=ff37.1:Toggle'
+                    # cmd='DCMD(Pulse)'
+                    # cmdu='DCMD(PULSE)'
+                    # val='ff37.1:Toggle'
                     if cmdu in DB.PORTTYPES:
                         log(DB.LOG_DEBUG,f"New portType {cmdu}")
                         portType = DB.PORTTYPES[cmdu]
@@ -1791,10 +1876,130 @@ class DomBusManager:
                     elif cmd.lower() in DB.HA_NAMES and val is not None:
                         log(DB.LOG_DEBUG,f"New ha attribute {cmd.lower()}")
                         ha[cmd.lower()] = val
+                    elif cmdu[:5] == "DCMD(":
+                        # parse DCMD configuration
+                        errmsg=''
+                        d = [ DB.DCMD_IN_EVENTS['NONE'], 0, 0, 0, 0, DB.DCMD_OUT_CMDS['NONE'], 0 ] #temp list to store a DCMD command
+                        opt = re.sub("ERROR=.*", "", c) #remove any Error=blablabla from the command
+                        optu = opt.upper()
+                        inputs = re.search(r'DCMD\((.+)\)=(.+\..+:.+)', optu)
+                        if inputs:
+                            #syntax of DCMD command semms to be ok
+                            inArr = inputs.group(1).split(':')    #inArr=['Value','0','20.5'] (inputs)
+                            outArr=inputs.group(2).split(':')   #
+                            if (len(inArr)>=1):
+                                log(DB.LOG_INFO,f"DCMD: {opt} Input event={inArr} Output command={outArr}")
+                                if (inArr[0] in DB.DCMD_IN_EVENTS):
+                                    d[0]=DB.DCMD_IN_EVENTS[inArr[0]]
+                                    d[1]=0
+                                    d1ok=0
+                                    d[2]=0
+                                    d2ok=0
+                                    if (len(inArr)>=2):
+                                        # inArr[1] contains a temperature, humidity, voltage,... convert this value to a integer representation used by DomBus
+                                        try:
+                                            d[1]=float(inArr[1])
+                                        except:
+                                            errmsg+="ValueLow should be a number, like 20.5. "
+                                            d[1]=0
+                                        else:
+                                            d1ok=1
+
+                                        try:
+                                            d[2]=float(inArr[2])
+                                        except:
+                                            errmsg+="ValueHigh should be a number, like 21.2. "
+                                            d[2]=0
+                                        else:
+                                            d2ok=1
+                                        if (inArr[0]=='VALUE'):
+                                            #convert d[1] and d[2] in temperature, RH, voltage, value according to the sensor type and A and B parameters
+                                            if (d1ok):
+                                                d[1]=convertValueToDombus(Devices[Unit],d[1])
+                                            if (d2ok):
+                                                d[2]=convertValueToDombus(Devices[Unit],d[2])
+                                            log(DB.LOG_DEBUG,f"d[1]={d[1]} d[2]={d[2]}")
+                                    if (len(outArr)>=2):
+                                        if (outArr[1] in DB.DCMD_OUT_CMDS):
+                                            #outArr[0]=101.4
+                                            #outArr[1]=ON
+                                            hwaddrport=outArr[0].split('.')
+                                            #TODO: ALL.BLIND
+                                            d[3]=int(hwaddrport[0],16)
+                                            d[4]=int(hwaddrport[1],16)
+                                            d[5]=int(DB.DCMD_OUT_CMDS[outArr[1]])
+                                            d[6]=0    #outValue
+                                            if (len(outArr)>=3):
+                                                #outArr[2]=30m
+                                                # From 0 to 60s => 31.25ms resolution      0=0, 1920=60s
+                                                # From 1m to 1h with 1s resolution         1921=61s, 3540+1920=5460=1h
+                                                # From 1h to 1d with 1m resolution         5461=1h+1m, 1380+5460=6840=24h
+                                                # From 1d to forever with 1h resolution    6841=25h
+                                                if (outArr[2].isnumeric()):
+                                                    #value * 31.5ms
+                                                    d[6]=int(outArr[2])
+                                                else:
+                                                    outValue=(outArr[2][:-1])
+                                                    outUM=outArr[2][-1:]
+                                                    #value in seconds
+                                                    if (outValue.isnumeric()):
+                                                        outValue=int(outValue)
+                                                        if (outUM=='S'):    #seconds
+                                                            if (outValue<=60):
+                                                                d[6]=outValue*32
+                                                            elif (outValue<=3600):
+                                                                d[6]=1920+(outValue-60)
+                                                        elif (outUM=='M'): #minutes
+                                                            if (outValue<=1):
+                                                                d[6]=outValue*60*32
+                                                            elif (outValue<=60):
+                                                                d[6]=1920+(outValue-1)*60
+                                                            elif (outValue<=1440):
+                                                                d[6]=5460+(outValue-60)
+                                                        elif (outUM=='H'):  #hours
+                                                            if (outValue<=1):
+                                                                d[6]=outValue*5460
+                                                            elif(outValue<=24):
+                                                                d[6]=5460+(outValue-1)*60
+                                                            else:
+                                                                d[6]=6840+(outValue-24)
+                                                        elif (outUM=='D'):
+                                                            d[6]=6840+(outValue-1)*24
+                                                        if (d[6]>65535):
+                                                            d[6]=1826*24+6840 #max 5 years = 1826 days
+                                                            errmsg+='Max time = 1826 days;'
+                                            dcmd.append(d)  #add record to dcmd[]
+                                        else:
+                                            errmsg="Command not recognized;"
+                                            log(DB.LOG_WARN,f"DCMD: Command {outArr[1]} not recognized, possible commands={list(DCMD_OUT_CMDS)}")
+                                            log(DB.LOG_DEBUG,"DCMD: {opt}")
+                                    else:
+                                        errmsg="At least HWADDR.PORT:COMMAND expected after =;"
+                                        log(DB.LOG_WARN,"DCMD: Address.Port:Command : invalid syntax. Address.Port="+outArr[0]+" ,Command="+outArr[1])
+                                        log(DB.LOG_DEBUG,"DCMD: "+opt)
+                                else:
+                                    errmsg="Event not recognized inside ();"
+                                    log(DB.LOG_WARN,"DCMD: Event not recognized: event="+inArr[0]+" , possible events="+str(list(DCMD_IN_EVENTS.keys())))
+                                    log(DB.LOG_DEBUG,"DCMD: "+opt)
+                            else:
+                                errmsg="At least 1 parameter expected inside ();"
+                                log(DB.LOG_WARN,"DCMD: no parameters specified inside ()")
+                                log(DB.LOG_DEBUG,"DCMD: "+opt)
+                        else:
+                            errmsg="Invalid syntax;"
+                            log(DB.LOG_WARN,"DCMD: invalid syntax")
+                            log(DB.LOG_DEBUG,"DCMD: "+opt)
+                        if (len(errmsg)>0):
+                            opt+=':Error='+errmsg+': Valid command is like DCMD(Value:0:20.5)=101.1:ON:30m'
+                            #reset values inside the current DCMD array
+                        # DCMD is OK
+                        if dcmdConf != '': dcmdConf += ','
+                        dcmdConf+=opt
+######
                     else:
                         log(DB.LOG_DEBUG,f"Ignoring {cmd}")
                     
-                self.parseConfiguration(devID, portType, portOpt, portName, options, ha, None, writer) 
+                self.parseConfiguration(devID, portType, portOpt, portName, options, ha, dcmd, dcmdConf, None, writer) 
             else:
                 if self.selectedModule == 0 or (devID>>16) not in Modules: 
                     writer.write(b'Please select an existing module with command "showmodule XXXX"\r\n')
@@ -1827,10 +2032,9 @@ class DomBusManager:
         """Remove the module with specified devID from DomBusGateway and from MQTT"""
 
 
-    def parseConfiguration(self, devID, portType, portOpt, portName, options:dict, ha:dict, value:int = None, writer = None):
+    def parseConfiguration(self, devID, portType, portOpt, portName, options:dict, ha:dict, dcmd: list = [], dcmdConf: str = '', value:int = None, writer = None):
         """Received options and ha dicts: check configuration ond call updateDeviceConfig to update both Device and DomBus module"""
         # confString: "ID=01ff37_01,IN_DIGITAL,INVERTED,DCMD(Pulse)=01ff36_07:Toggle,DCMD(Pulse1)=01ff36_08:Toggle"
-        dcmd = {}           # Used to set DCMD configuration
         optionsNew = {}
         haNew = {}
         cal = None
@@ -1878,7 +2082,7 @@ class DomBusManager:
             # Serial port is active
             # Update MQTT and DomBus module
             log(DB.LOG_DEBUG,"[parseConfiguration] Calling updateDeviceConfig...")
-            d.updateDeviceConfig(portType, portOpt, cal, dcmd, optionsNew, haNew, value)  # Update configuration (setting CAL, DCMD, device_class, ...)
+            d.updateDeviceConfig(portType, portOpt, cal, dcmd, dcmdConf, optionsNew, haNew, value)  # Update configuration (setting CAL, DCMD, device_class, ...)
         else:
             log(DB.LOG_INFO, "[parseConfiguration] Serial port for the associated device is not active now! Cannot configure DomBus module")
             if writer:
@@ -1902,7 +2106,7 @@ def saveData():
     with open(devicesPath, 'w', encoding='utf-8') as f:
         json.dump({k: v.to_dict() for k, v in Devices.items()}, f, indent=2)
 
-####################################################################### main #################################################################################
+####################################################################### main() #################################################################################
 
 if __name__ == "__main__":
     async def main():
@@ -1933,7 +2137,7 @@ if __name__ == "__main__":
     # parsing args...
     parser = argparse.ArgumentParser(prog='DomBusGateway', description='DomBus 2 MQTT bridge')
 
-    parser.add_argument('--debug_level', '-d', type=int, default=7,
+    parser.add_argument('--debug_level', '-d', type=int, default=-1,
             help='Debug level: 0=OFF, 1=Errors, 3=Warnings, 7=Info, 15=Debug, +16=RX, +32=TX, +64=DCMD, +256=MQTTRX, +512=MQTTTX, +65536=Telnet')
     parser.add_argument('--bus1_port', '-b1', type=str, default='',
             help='Serial port for bus1, for example /dev/ttyUSB0')
@@ -1945,7 +2149,7 @@ if __name__ == "__main__":
             help='Serial port for bus4, for example /dev/ttyUSB3')
     parser.add_argument('--mqtt_host', '-mh', type=str, default='',
             help='Hostname or IP address of the MQTT broker, for example homeassistant.local')
-    parser.add_argument('--mqtt_port', '-mp', type=int,
+    parser.add_argument('--mqtt_port', '-mp', type=int, default=-1,
             help='TCP port of the MQTT broker, for example 1883')
     parser.add_argument('--mqtt_user', '-mu', type=str, default='',
             help='Username that can access the MQTT broker, for example dombus. On HAOS, a user must be created with this name')
@@ -1953,7 +2157,7 @@ if __name__ == "__main__":
             help='Password for the user accessing the MQTT broker')
 
     args = parser.parse_args()
-    if args.debug_level:    debugLevel = args.debug_level
+    if args.debug_level and args.debug_level>=0:    debugLevel = args.debug_level
     if args.bus1_port and args.bus1_port != '':
         if 1 not in buses: buses[1]={}     
         buses[1]['serialPort']=args.bus1_port
@@ -1968,7 +2172,7 @@ if __name__ == "__main__":
                     buses[4]['serialPort']=args.bus4_port
     if args.mqtt_host and args.mqtt_host != '':
         mqtt['host'] = args.mqtt_host
-    if args.mqtt_port:
+    if args.mqtt_port and args.mqtt_port>0:
         mqtt['port'] = args.mqtt_port
         print(f"mqtt_port={mqtt['port']}")
     if args.mqtt_user and args.mqtt_user != '':
