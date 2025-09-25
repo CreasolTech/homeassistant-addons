@@ -1,7 +1,7 @@
 name: "DomBusGateway"
 description: "DomBus to MQTT-AD bridge: use Creasol DomBus inputs/outputs/sensors modules"
 slug: "dombusgateway"
-version: "0.0.14"
+version: "0.2.1"
 init: false
 arch:
   - aarch64
@@ -25,7 +25,10 @@ uart: true
 
 devices:
   - /dev/ttyUSB0  
-  
+  - /dev/ttyUSB1
+  - /dev/ttyUSB2
+  - /dev/ttyUSB3
+
 #logger:
 #  logs:
 #    info_log: data/info.log
