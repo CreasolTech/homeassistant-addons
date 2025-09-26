@@ -1,7 +1,7 @@
 name: "DomBusGateway"
 description: "DomBus to MQTT-AD bridge: use Creasol DomBus inputs/outputs/sensors modules"
 slug: "dombusgateway"
-version: "0.2.1"
+version: "0.3.1"
 init: false
 arch:
   - aarch64
@@ -42,6 +42,7 @@ options:
   mqtt_port: 1883
   mqtt_user: "dombus"
   mqtt_pass: "secretpasswd"
+  telnet_pass: "secretpasswd"
 
 
 # Schema defines the format for the options above. This creates a form in the UI.
@@ -55,6 +56,7 @@ schema:
   mqtt_port: int
   mqtt_user: str
   mqtt_pass: str
+  telnet_pass: str
 
 ## Not mandatory but good practice: Document the secrets
 #secrets:
