@@ -4,7 +4,7 @@
 # Written by Creasol - www.creasol.it
 #
 
-VERSION = "0.3"
+VERSION = "0.4-pre1"
 
 from dombusgateway_conf import *
 
@@ -32,6 +32,7 @@ import time
 import re
 import bisect
 import struct
+import math
 from typing import Any
 from datetime import datetime
 from queue import Queue
@@ -184,11 +185,12 @@ class DomBusDevice():
         self.portConf = ''
         if self.portType in DB.PORTTYPES_NAME:
             self.portConf += f'{DB.PORTTYPES_NAME[self.portType]}'
-        if self.portOpt in DB.PORTOPTS_NAME:
+
+        if self.portOpt in DB.PORTOPTS_NAME and self.portOpt != DB.PORTOPT_NONE:  # ignore NORMAL portOpt
             self.portConf += f',{DB.PORTOPTS_NAME[self.portOpt]}'
 
         for opt in self.options:
-            if not ((opt == 'A' and float(self.options[opt]) == 1) or (opt == 'B' and float(self.options[opt]) == 0)): 
+            if not ((opt == 'A' and float(self.options[opt]) == 1) or (opt == 'B' and float(self.options[opt]) == 0) or opt == 'HWADDR'): 
                 self.portConf += f',{opt}={self.options[opt]}'
         if len(self.dcmdConf)>0:
             self.portConf += ',' + self.dcmdConf    # Add DCMD description as written by the user                
@@ -367,7 +369,20 @@ class DomBusDevice():
                             # portType changed => remove previous entity by sending config topic with empty payload
                             log(DB.LOG_DEBUG,f'Removing old associated entity, topic={self.lastTopic2Config}, payload=""')
                             manager.mqttPublish(self.lastTopic2Config, "")
-                        
+
+                    if self.portType == DB.PORTTYPE_IN_ANALOG:
+                        if 'FUNCTION' in self.options:
+                            if self.options['FUNCTION'] == '3950' and (self.ha['p'] != 'sensor' or self.ha['device_class'] != 'temperature'):
+                                self.ha = DB.PORTTYPES_HA[DB.PORTTYPE_SENSOR_TEMP].copy()    # set 'p': 'sensor', 'device_class': 'temperature', 'unit_of_measurement': '°C', 'suggested_display_precision': 1
+                    else:
+                        # not analog port => remove FUNCTION if exists
+                        if 'FUNCTION' in self.options:    
+                            del self.options['FUNCTION']
+
+                    if self.portOpt == DB.PORTOPT_INVERTED and self.port not in (DB.PORTTYPE_IN_DIGITAL, DB.PORTTYPE_OUT_DIGITAL, DB.PORTTYPE_OUT_RELAY_LP, DB.PORTTYPE_OUT_DIMMER, DB.PORTTYPE_OUT_BUZZER):
+                        self.portOpt = DB.PORTOPT_NONE   # reset INVERTED flag when port is configured as temperature, analog, ...
+
+
                     self.setTopics(self.ha['p'], "")    # update current topic
                     payload = dict(name = f"{self.portName}", friendly_name = f"{self.portName}", unique_id = 'dombus_' + self.devIDname, command_topic = f"{self.topic}/set", \
                             state_topic = f"{self.topic}/state", schema = "json")
@@ -1189,14 +1204,14 @@ class DomBusProtocol(asyncio.Protocol):
                                                     Ro=10000.0  # 20230703: float (was int)
                                                     To=25.0
                                                     temp=0.0  #default temperature # 20230703: float (was int)
-                                                    if (d.options['function']=='3950'):
+                                                    if (d.options['FUNCTION']=='3950'):
                                                         #value=0..65535
                                                         beta=3950
                                                         if value == 65535: value=65534  #Avoid division by zero
                                                         r = value * Ro / (65535 - value)
                                                         temp = math.log(r / Ro) / beta      # log(R/Ro) / beta
                                                         temp += 1.0 / (To + 273.15)
-                                                        temp = (1.0 /temp)-273.15, 2
+                                                        temp = (1.0 / temp) - 273.15
                                                 else:
                                                     temp = value / 10.0 - 273.1
                                                 
@@ -2119,10 +2134,12 @@ class DomBusManager:
         if devID in Devices:
             d = Devices[devID]
 
-        if d:
-            # device already exist => update options and ha dictionary
+        if d and d.portType == portType:
+            # device already exist and portType not changed by the user => update options and ha dictionary
             optionsNew = d.options.copy()
             haNew = d.ha.copy()
+            self.dcmd = {}
+            self.dcmdConf = ''
         else:
             # new device
             optionsNew['A'] = 1
@@ -2130,7 +2147,7 @@ class DomBusManager:
             if portType in DB.PORTTYPES_HA:
                 haNew = DB.PORTTYPES_HA[portType].copy()
         optionsNew.update(options)
-        haNew.update(ha)
+        haNew.update(ha)    # merge existing/standard configuration with parameters set by the user
 
         # Now check parameters #TODO
         if 'DIVIDER' in optionsNew:
@@ -2214,7 +2231,9 @@ if __name__ == "__main__":
     # parsing args...
     parser = argparse.ArgumentParser(prog='DomBusGateway', description='DomBus 2 MQTT bridge')
 
-    parser.add_argument('--debug_level', '-d', type=int, default=-1,
+    parser.add_argument('--data_dir', '-dd', type=str, default='',
+            help='Data dir for persistent data (Devices and Modules): default "/data" in case of add-on or docker container, "data" in case of DomBusGateway running as a deaemon')
+    parser.add_argument('--debug_level', '-dl', type=int, default=-1,
             help='Debug level: 0=OFF, 1=Errors, 3=Warnings, 7=Info, 15=Debug, +16=RX, +32=TX, +64=DCMD, +256=MQTTRX, +512=MQTTTX, +65536=Telnet')
     parser.add_argument('--bus1_port', '-b1', type=str, default='',
             help='Serial port for bus1, for example /dev/ttyUSB0')
@@ -2236,6 +2255,7 @@ if __name__ == "__main__":
             help='Password for telnet from remote connections')
 
     args = parser.parse_args()
+    if args.data_dir and args.data_dir != '':       dataDir = args.data_dir
     if args.debug_level and args.debug_level>=0:    debugLevel = args.debug_level
     if args.bus1_port and args.bus1_port != '':
         if 1 not in buses: buses[1]={}     
@@ -2279,7 +2299,7 @@ if __name__ == "__main__":
     """handlers=[logHandler],"""
 
     # check that data directory exists
-    dataPath = Path(datadir)
+    dataPath = Path(dataDir)
     dataPath.mkdir(parents=True, exist_ok=True)
 
     modulesPath = dataPath / 'Modules.json'
