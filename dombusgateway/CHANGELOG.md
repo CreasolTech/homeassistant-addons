@@ -6,6 +6,8 @@ Developed by Creasol - https://www.creasol.it/domotics
 
 Below the changes related to the addon only
 
+## [0.3.3] 2025-10-09
+* Added --data_dir parameter to override dataDir (persistent data folder) in dombusgateway_conf.py
 
 ## [0.0.7] - 2025-09-12
 
