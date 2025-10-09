@@ -2328,10 +2328,14 @@ if __name__ == "__main__":
         with open(modulesPath, 'r', encoding='utf-8') as f:
             tempdict = json.load(f)
             Modules = {int(k): v for k, v in tempdict.items()}
+    else:
+        log(DB.LOG_WARN, f"Modules data file {dataDir}/Modules.json does not exist")
     if devicesPath.exists():
         with open(devicesPath, 'r', encoding='utf-8') as f:
             tempdict = json.load(f)
             Devices = {int(k): DomBusDevice.from_dict(v) for k, v in tempdict.items()}
+    else:
+        log(DB.LOG_WARN, f"Devices data file {dataDir}/Devices.json does not exist")
     del tempdict
 
     try:
