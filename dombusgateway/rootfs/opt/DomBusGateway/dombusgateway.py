@@ -4,7 +4,7 @@
 # Written by Creasol - www.creasol.it
 #
 
-VERSION = "0.4-pre2"
+VERSION = "0.4-pre3"
 
 from dombusgateway_conf import *
 
@@ -2296,7 +2296,6 @@ if __name__ == "__main__":
         mqtt['pass'] = args.mqtt_pass
     if args.telnet_pass and args.telnet_pass != '':
         telnet['password'] = args.telnet_pass
-
 
     # logging
     if logFile: 
