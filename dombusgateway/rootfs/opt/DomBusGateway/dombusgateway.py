@@ -2297,6 +2297,7 @@ if __name__ == "__main__":
     if args.telnet_pass and args.telnet_pass != '':
         telnet['password'] = args.telnet_pass
 
+
     # logging
     if logFile: 
         logHandler = RotatingFileHandler(
