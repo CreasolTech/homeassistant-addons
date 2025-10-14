@@ -16,6 +16,8 @@ Bridge to interface one or more networks of DomBus modules (inputs, outputs, rel
 
 ![DomBusGateway add-on for Home Assistant Operating system (HAOS)](https://images.creasol.it/dombusgateway_addon.webp)
 
+![HomeAssistant Dashboard for the Home Made Wallbox using DomBusEVSE module](https://images.creasol.it/creDomBusEVSE_dashboard3.webp)
+
 ## DomBusGateway addon installation
 
 1. Install MQTT integration/component, if not already enabled: **Settings** > **Devices & Services** > **+ Add integration** > **MQTT** > **Add** and then select *Use the official Mosquitto MQTT broker add-on* in case that a MQTT broker is not installed.
