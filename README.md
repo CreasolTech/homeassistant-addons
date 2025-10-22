@@ -56,7 +56,7 @@ Then it's possible to arrange entities in a custom dashboard as shown below:
 
 ![HomeAssistant Dashboard for the Home Made Wallbox using DomBusEVSE module](https://images.creasol.it/creDomBusEVSE_dashboard3.webp)
 
-**Want to build a home-made EV charging station? Discover our KITs!** \
+**Want to build a home-made, full features, EV charging station? Discover our KITs!** \
  [KIT for single phase wallbox](https://store.creasol.it/EVSE1P) \
  [KIT for three phase wallbox](https://store.creasol.it/EVSE3P)
 
