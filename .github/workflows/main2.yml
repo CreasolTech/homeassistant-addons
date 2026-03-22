@@ -23,6 +23,6 @@ jobs:
           # Mantiene solo le ultime 3 versioni taggate
           keep-n-most-recent: 3
           # Elimina versioni non taggate (intermedie)
-          delete-untagged: true
+          # delete-untagged: true
           # Per test iniziali, metti true per vedere cosa verrebbe cancellato
           dry-run: false
