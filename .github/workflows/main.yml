@@ -1,0 +1,29 @@
+name: Prune GHCR Images - Keep Last 3 Versions
+
+on:
+  schedule:
+    # Esegue ogni giorno alle 00:00 UTC
+    - cron: "13 2 * * *"
+  workflow_dispatch:  # Permette esecuzione manuale
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Clean up old container versions
+        uses: snok/container-retention-policy@v3.0.0
+        with:
+          account: ${{ github.repository_owner }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Nome esatto del tuo container (senza il prefisso ghcr.io/)
+          image-names: "i386-dombusgateway-addon"
+          # Mantiene solo le ultime 3 versioni taggate
+          keep-n-most-recent: 3
+          # Elimina versioni non taggate (intermedie)
+          # delete-untagged: true
+          # Per test iniziali, metti true per vedere cosa verrebbe cancellato
+          dry-run: false
