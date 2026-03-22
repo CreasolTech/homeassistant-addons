@@ -1,4 +1,4 @@
-name: Prune GHCR Images - Keep Last 3 Versions
+name: Keep Last 3 Versions
 
 on:
   schedule:
@@ -21,6 +21,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           # Nome esatto del tuo container (senza il prefisso ghcr.io/)
           image-names: "i386-dombusgateway-addon"
+          cut-off: 30d  # elimina versioni più vecchie di 30 giorni
           # Mantiene solo le ultime 3 versioni taggate
           keep-n-most-recent: 3
           # Elimina versioni non taggate (intermedie)
