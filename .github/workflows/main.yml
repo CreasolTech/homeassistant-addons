@@ -1,0 +1,18 @@
+name: Cleanup GHCR
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  delete-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'i386-dombusgateway-addon'
+          package-type: 'container'
+          min-versions-to-keep: 5
+          # Optional: only delete untagged images
+          delete-only-untagged-versions: 'true'
