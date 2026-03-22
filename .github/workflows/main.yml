@@ -19,7 +19,7 @@ jobs:
         uses: snok/container-retention-policy@v3.0.0
         with:
           account: ${{ github.repository_owner }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PACKAGES_TOKEN }}
           # Nome esatto del tuo container (senza il prefisso ghcr.io/)
           image-names: "i386-dombusgateway-addon"
           cut-off: 30d  # elimina versioni più vecchie di 30 giorni
