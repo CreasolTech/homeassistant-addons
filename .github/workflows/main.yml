@@ -27,4 +27,3 @@ jobs:
           delete-untagged: true
           # Per test iniziali, metti true per vedere cosa verrebbe cancellato
           dry-run: false
-
