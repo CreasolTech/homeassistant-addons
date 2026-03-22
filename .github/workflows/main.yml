@@ -22,6 +22,7 @@ jobs:
           # Nome esatto del tuo container (senza il prefisso ghcr.io/)
           image-names: "i386-dombusgateway-addon"
           cut-off: 30d  # elimina versioni più vecchie di 30 giorni
+          
           # Mantiene solo le ultime 3 versioni taggate
           keep-n-most-recent: 3
           # Elimina versioni non taggate (intermedie)
