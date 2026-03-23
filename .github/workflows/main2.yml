@@ -1,0 +1,27 @@
+name: Clean up old container package versions
+
+on:
+  workflow_dispatch:  # Trigger manually
+  schedule:
+    - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Delete old package versions
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: ${{ env.IMAGE_NAME }}
+          package-type: 'container'
+          min-versions-to-keep: 3
+          ignore-versionless-assets: true
+          
