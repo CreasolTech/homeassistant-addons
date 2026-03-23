@@ -1,8 +1,8 @@
 # Creasol addons for Home Assistant Operating System HAOS
 
-This repository contains the following addons:
+This repository contains the following addon:
 
-### [DomBusGateway](./dombusgateway)
+# [DomBusGateway](./dombusgateway)
 
 ![Supports aarch64 Architecture][aarch64-shield]
 ![Supports amd64 Architecture][amd64-shield]
@@ -12,7 +12,14 @@ This repository contains the following addons:
 
 ![DomBusGateway, a DomBus 2 MQTT bridge](https://images.creasol.it/dombusgateway_block1.webp)
 
-Bridge to interface one or more networks of DomBus modules (inputs, outputs, relays, sensors modules) with MQTT AutoDiscovery
+This is the bridge between **Home Assistant** and one or more networks of **DomBus** modules: **professional modules with inputs, outputs, relays, sensors modules that can be managed by MQTT with AutoDiscovery**, with the following features:
+
+* High reliability: **wired bus => no disconnections**
+* High security: 100% local, no internet, no cloud, providing a **strong security**
+* **Very low power consumption => typically less than 15mW, +75mW for any relay in ON state**: can you find anything better?
+* **Like KNX©, modules can exchange commands autonomously** without the need of a supervisor (independetly from Home Assistant)
+* Using a standard 4x0.22mm² alarm cable for bus (data + 12V power supply) => **do not stop working in case of blackout if a 12V backup battery is used**
+* Made in Italy: full support, also by Telegram and Whatsapp
 
 ![DomBusGateway add-on for Home Assistant Operating system (HAOS)](https://images.creasol.it/dombusgateway_addon.webp)
 

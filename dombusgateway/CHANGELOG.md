@@ -6,6 +6,9 @@ Developed by Creasol - https://www.creasol.it/domotics
 
 Below the changes related to the addon only
 
+## [0.5.4] 2026-03-22
+* Several new features: please check the CHANGELOG in the DomBusGateway GitHub repository.
+
 ## [0.4.1] 2025-11-30
 * Several new features: please check the CHANGELOG in the DomBusGateway GitHub repository.
 
