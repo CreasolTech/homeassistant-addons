@@ -4,6 +4,9 @@ on:
   workflow_dispatch:  # Trigger manually
   schedule:
     - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
+  push:
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -24,4 +27,4 @@ jobs:
           package-type: 'container'
           min-versions-to-keep: 3
           ignore-versionless-assets: true
-          
+          token: ${{ secrets.GITHUB_TOKEN }}
