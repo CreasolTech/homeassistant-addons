@@ -1,0 +1,41 @@
+name: Rimuovi vecchie versioni (tieni le ultime 3)
+
+on:
+  workflow_dispatch:  # Trigger manually
+  # schedule:
+  #  - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    strategy:
+      matrix:
+        package:
+          - i386-dombusgateway-addon
+          - amd64-dombusgateway-addon
+          - armv7-dombusgateway-addon
+          - armhf-dombusgateway-addon
+          - aarch64-dombusgateway-addon
+
+    steps:
+      - name: Delete old versions for ${{ matrix.package }}
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: CreasolTech
+          package-name: ${{ matrix.package }}
+          package-type: container
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: 'false'
+          # ignore-versionless-assets: true
+          # remove max 10 package versions for any run
+          # num-old-versions-to-delete: 10  
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+
+
