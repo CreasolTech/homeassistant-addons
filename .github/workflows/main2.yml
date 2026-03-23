@@ -1,9 +1,9 @@
-name: Clean up old container package versions
+name: Rimuovi vecchie versioni (tieni le ultime 3)
 
 on:
   workflow_dispatch:  # Trigger manually
-  schedule:
-    - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
+  # schedule:
+  #  - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
 
 jobs:
   cleanup:
