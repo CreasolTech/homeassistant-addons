@@ -27,10 +27,10 @@ jobs:
         with:
           package-name: homeassistant-addons/${{ matrix.package }}
           package-type: container
-          min-versions-to-keep: 1
+          min-versions-to-keep: 3
           # ignore-versionless-assets: true
           # remove max 10 package versions for any run
-          num-old-versions-to-delete: 10  
+          # num-old-versions-to-delete: 10  
           token: ${{ secrets.GITHUB_TOKEN }}
 
 
