@@ -1,4 +1,3 @@
-FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true
 name: Rimuovi vecchie versioni (tieni le ultime 3)
 
 on:
@@ -7,6 +6,8 @@ on:
   #  - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
 
 jobs:
+  env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   cleanup:
     runs-on: ubuntu-latest
     permissions:
