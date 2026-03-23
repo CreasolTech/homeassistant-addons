@@ -27,7 +27,7 @@ jobs:
       - name: Delete old versions for ${{ matrix.package }}
         uses: actions/delete-package-versions@v5
         with:
-          owner: CreasolTech123
+          owner: CreasolTech
           package-name: homeassistant-addons/${{ matrix.package }}
           package-type: container
           min-versions-to-keep: 3
