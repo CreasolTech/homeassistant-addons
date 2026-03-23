@@ -6,13 +6,13 @@ on:
   #  - cron: '0 2 * * 0'  # Run weekly on Sunday at 2 AM UTC
 
 jobs:
-  env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   cleanup:
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     strategy:
       matrix:
