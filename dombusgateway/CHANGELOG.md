@@ -6,6 +6,9 @@ Developed by Creasol - https://www.creasol.it/domotics
 
 Below the changes related to the addon only
 
+## [0.5.6] 2026-07-13
+* DomBus31 and DomBus36 now are correctly managed. Thanks to Victor!
+
 ## [0.5.5] 2026-04-04
 * DomBus33 management.
 
